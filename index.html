@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Teseo e il Labirinto Grammaticale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bronze: #b08d57;
+  --bronze-dark: #6b5230;
+  --bronze-light: #d4af7a;
+  --crimson: #8b1a1a;
+  --crimson-bright: #d63b3b;
+  --gold: #f4c430;
+  --parchment: #f3e8d0;
+  --ink: #2a1810;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(139, 26, 26, 0.18), transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(176, 141, 87, 0.12), transparent 60%),
+    linear-gradient(180deg, #1a0e08 0%, #0a0503 100%);
+  color: var(--parchment);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0, transparent 40px, rgba(176, 141, 87, 0.04) 40px, rgba(176, 141, 87, 0.04) 41px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 40px, rgba(176, 141, 87, 0.04) 40px, rgba(176, 141, 87, 0.04) 41px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.game-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  padding: 10px 18px;
+  background: linear-gradient(180deg, rgba(176, 141, 87, 0.18), rgba(107, 82, 48, 0.1));
+  border: 2px solid var(--bronze-dark);
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: var(--bronze-light);
+  box-shadow: inset 0 2px 0 rgba(244, 196, 48, 0.15), 0 4px 0 rgba(0,0,0,0.4);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-item strong {
+  color: var(--gold);
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.canvas-container {
+  position: relative;
+  border: 4px solid var(--bronze);
+  box-shadow:
+    0 0 0 2px var(--bronze-dark),
+    0 0 80px rgba(0,0,0,0.9),
+    inset 0 0 1px rgba(244, 196, 48, 0.3);
+  background: #000;
+  max-width: 100%;
+}
+
+#gameCanvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Schermate */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at center, rgba(20, 10, 5, 0.92), rgba(5, 2, 1, 0.99));
+  z-index: 100;
+  text-align: center;
+  padding: 24px;
+  animation: fadeIn 0.5s ease;
+}
+
+.screen.hidden { display: none; }
+
+.screen .ornament {
+  font-size: 32px;
+  color: var(--bronze);
+  letter-spacing: 0.5em;
+  margin-bottom: 12px;
+  opacity: 0.7;
+}
+
+.screen h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(30px, 6.5vw, 60px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  background: linear-gradient(180deg, #ffe9a3 0%, var(--gold) 40%, var(--bronze) 70%, var(--bronze-dark) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 8px;
+  text-shadow: 0 0 60px rgba(244, 196, 48, 0.4);
+  line-height: 1.1;
+}
+
+.screen h2 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(18px, 3.5vw, 28px);
+  font-weight: 500;
+  margin-bottom: 22px;
+  color: var(--bronze-light);
+  font-style: italic;
+  letter-spacing: 0.1em;
+}
+
+.screen p {
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(15px, 2.4vw, 18px);
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: 26px;
+  color: var(--parchment);
+  font-style: italic;
+}
+
+.btn {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(14px, 2.4vw, 18px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 14px 36px;
+  background:
+    linear-gradient(180deg, var(--bronze-light) 0%, var(--bronze) 50%, var(--bronze-dark) 100%);
+  color: var(--ink);
+  border: 2px solid var(--bronze-dark);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 180, 0.5),
+    0 4px 0 var(--bronze-dark),
+    0 8px 16px rgba(0,0,0,0.6);
+  text-shadow: 0 1px 0 rgba(255, 235, 180, 0.3);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 180, 0.5),
+    0 6px 0 var(--bronze-dark),
+    0 12px 20px rgba(0,0,0,0.7);
+}
+
+.btn:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 180, 0.3),
+    0 2px 0 var(--bronze-dark);
+}
+
+/* Modale Quiz */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+  padding: 16px;
+}
+
+.modal.hidden { display: none; }
+
+.modal-content {
+  background:
+    repeating-linear-gradient(45deg, rgba(176, 141, 87, 0.04) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #f3e8d0 0%, #e8d8b8 100%);
+  color: var(--ink);
+  padding: 30px 32px;
+  max-width: 580px;
+  width: 100%;
+  border: 4px double var(--bronze-dark);
+  position: relative;
+  box-shadow:
+    inset 0 0 60px rgba(176, 141, 87, 0.15),
+    0 0 100px rgba(244, 196, 48, 0.4);
+  animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-content::before, .modal-content::after {
+  content: '⚜';
+  position: absolute;
+  font-size: 24px;
+  color: var(--bronze-dark);
+}
+.modal-content::before { top: 4px; left: 12px; }
+.modal-content::after { bottom: 4px; right: 12px; }
+
+.modal-header {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--crimson);
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.modal-divider {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bronze-dark), transparent);
+  margin: 8px auto 16px;
+}
+
+.question {
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(17px, 2.8vw, 22px);
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 22px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-btn {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(16px, 2.6vw, 20px);
+  font-weight: 600;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, #fbf6e8, #ede0c5);
+  border: 2px solid var(--bronze-dark);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.04em;
+  transition: all 0.18s ease;
+}
+
+.option-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--gold), var(--bronze));
+  transform: translateX(4px);
+  box-shadow: -4px 0 0 var(--crimson);
+}
+
+.option-btn.correct {
+  background: linear-gradient(180deg, #7fb87f, #3d6b3d) !important;
+  color: white;
+  animation: pulseCorrect 0.5s ease;
+  border-color: #2d4b2d;
+}
+
+.option-btn.wrong {
+  background: linear-gradient(180deg, #b85050, #6b2424) !important;
+  color: white;
+  animation: shake 0.4s ease;
+  border-color: #4b1d1d;
+}
+
+.option-btn:disabled { cursor: default; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn {
+  from { transform: translateY(-30px) scale(0.92); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes pulseCorrect {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+
+/* Controlli mobile */
+.controls {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.controls-row { display: flex; gap: 6px; }
+
+.dpad-btn {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(180deg, var(--bronze) 0%, var(--bronze-dark) 100%);
+  border: 2px solid var(--bronze-dark);
+  color: var(--parchment);
+  font-size: 26px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  font-weight: bold;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 var(--bronze-light), 0 2px 0 #3a2c1a;
+  font-family: 'Cinzel', serif;
+  touch-action: manipulation;
+}
+
+.dpad-btn:active {
+  background: var(--bronze-light);
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 0 var(--bronze-light), 0 1px 0 #3a2c1a;
+}
+
+@media (pointer: coarse), (max-width: 700px) { .controls { display: flex; } }
+
+.instructions {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  color: var(--bronze-light);
+  font-size: 13px;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.audio-btn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  background: linear-gradient(180deg, var(--bronze) 0%, var(--bronze-dark) 100%);
+  border: 2px solid var(--bronze-dark);
+  color: var(--parchment);
+  width: 46px;
+  height: 46px;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 250;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 var(--bronze-light), 0 3px 0 #3a2818, 0 4px 12px rgba(0,0,0,0.4);
+  transition: transform 0.1s ease;
+}
+
+.audio-btn:hover { transform: translateY(-1px); }
+.audio-btn:active { transform: translateY(2px); box-shadow: inset 0 1px 0 var(--bronze-light), 0 1px 0 #3a2818; }
+.audio-btn.muted { opacity: 0.6; }
+
+.level-banner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  pointer-events: none;
+  z-index: 50;
+  animation: bannerFade 2.6s ease forwards;
+  text-align: center;
+  padding: 16px;
+}
+
+.level-banner h2 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(24px, 5vw, 44px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(244, 196, 48, 0.6);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.level-banner p {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  color: var(--bronze-light);
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+@keyframes bannerFade {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+.feedback-correct, .feedback-wrong {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Cinzel', serif;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  z-index: 300;
+  pointer-events: none;
+  animation: feedbackPop 1.2s ease forwards;
+}
+
+.feedback-correct {
+  color: #6fcc6f;
+  text-shadow: 0 0 30px rgba(111, 204, 111, 0.8), 0 4px 0 rgba(0,0,0,0.6);
+}
+
+.feedback-wrong {
+  color: #ff5050;
+  text-shadow: 0 0 30px rgba(255, 80, 80, 0.8), 0 4px 0 rgba(0,0,0,0.6);
+}
+
+@keyframes feedbackPop {
+  0% { opacity: 0; transform: translate(-50%, -10px) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
+  60% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -30px) scale(1); }
+}
+
+</style>
+</head>
+<body>
+
+<!-- Bottone audio toggle -->
+<button id="audioToggle" class="audio-btn" title="Attiva/disattiva audio" aria-label="Audio">🔊</button>
+
+<!-- Schermata iniziale -->
+<div class="screen" id="startScreen">
+  <div class="ornament">⚔ ⚔ ⚔</div>
+  <h1>Teseo<br>e il Labirinto<br>Grammaticale</h1>
+  <h2>Una Sfida nel Labirinto di Cnosso</h2>
+  <p>Sei Teseo, eroe di Atene. Sei stato gettato nel labirinto del Minotauro, e le sue porte sono sigillate da antiche rune grammaticali. Per fuggire da ogni livello dovrai aprire <strong>tutte</strong> le porte runiche rispondendo correttamente alle domande di grammatica. Solo allora l'uscita si schiuderà! Attento: il Minotauro ti dà la caccia, e le risposte sbagliate gli permettono di avvicinarsi più in fretta.</p>
+  <button class="btn" id="startBtn">Inizia il Viaggio</button>
+  <div class="instructions" style="margin-top: 18px;">Frecce o W A S D per muoverti</div>
+</div>
+
+<!-- Game over -->
+<div class="screen hidden" id="gameOverScreen">
+  <div class="ornament">☠ ☠ ☠</div>
+  <h1 style="background: linear-gradient(180deg, #ff8080 0%, #8b1a1a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;">Sconfitto</h1>
+  <h2>Il Minotauro ti ha raggiunto...</h2>
+  <p>Le tenebre del labirinto hanno avuto la meglio. Ma un eroe non si arrende mai: ogni sconfitta è una lezione. Ritorna a questo livello e riprova!</p>
+  <button class="btn" id="retryBtn">Riprova questo livello</button>
+</div>
+
+<!-- Vittoria -->
+<div class="screen hidden" id="victoryScreen">
+  <div class="ornament">⚜ ⚜ ⚜</div>
+  <h1>Vittoria!</h1>
+  <h2>Sei fuggito dal Labirinto</h2>
+  <p>Hai sconfitto il Minotauro con la tua intelligenza! La grammatica è la tua spada, e con essa hai liberato Atene per sempre dal tributo. Le Muse cantano le tue gesta.</p>
+  <p style="color: var(--gold); font-style: normal; font-weight: 600;">Risposte corrette: <span id="finalScore">0</span></p>
+  <button class="btn" id="playAgainBtn">Gioca Ancora</button>
+</div>
+
+<!-- UI di gioco -->
+<div class="game-wrapper">
+  <div class="hud">
+    <div class="hud-item"><span>Livello</span><strong id="levelLabel">1</strong></div>
+    <div class="hud-item"><span id="levelName">Le Prigioni</span></div>
+    <div class="hud-item"><span>Porte</span><strong id="doorsLabel">0/0</strong></div>
+    <div class="hud-item"><span>Risposte</span><strong id="scoreLabel">0</strong></div>
+  </div>
+  <div class="canvas-container">
+    <canvas id="gameCanvas" width="680" height="520"></canvas>
+  </div>
+  <div class="instructions">Frecce / WASD — apri tutte le porte runiche per liberare l’uscita</div>
+  <div class="controls">
+    <div class="controls-row"><button class="dpad-btn" data-dir="up">↑</button></div>
+    <div class="controls-row">
+      <button class="dpad-btn" data-dir="left">←</button>
+      <button class="dpad-btn" data-dir="down">↓</button>
+      <button class="dpad-btn" data-dir="right">→</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale quiz -->
+<div class="modal hidden" id="quizModal">
+  <div class="modal-content">
+    <div class="modal-header">⚔ Sfida Grammaticale ⚔</div>
+    <div class="modal-divider"></div>
+    <div class="question" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// AUDIO ENGINE (Web Audio API, suoni generati proceduralmente)
+// ============================================================
+const AUDIO = {
+  ctx: null,
+  enabled: true,
+  initialized: false,
+  init() {
+    if (this.initialized) return;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        this.ctx = new Ctx();
+        this.initialized = true;
+      }
+    } catch (e) { this.enabled = false; }
+  },
+  resume() {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  },
+  tone(freq, duration, type = 'sine', vol = 0.15, when = 0, freqEnd = null) {
+    if (!this.enabled || !this.ctx) return;
+    const t0 = this.ctx.currentTime + when;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (freqEnd !== null) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), t0 + duration);
+    }
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain).connect(this.ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  },
+  noise(duration, vol = 0.1, when = 0, lowpass = 1000) {
+    if (!this.enabled || !this.ctx) return;
+    const sr = this.ctx.sampleRate;
+    const len = Math.floor(sr * duration);
+    const buffer = this.ctx.createBuffer(1, len, sr);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() - 0.5) * 2;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = lowpass;
+    const gain = this.ctx.createGain();
+    const t0 = this.ctx.currentTime + when;
+    gain.gain.setValueAtTime(vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    src.connect(filter).connect(gain).connect(this.ctx.destination);
+    src.start(t0);
+  },
+  // Suoni di gioco
+  footstep() {
+    if (!this.enabled) return;
+    this.tone(120 + Math.random() * 30, 0.04, 'square', 0.04);
+  },
+  wallBump() {
+    if (!this.enabled) return;
+    this.tone(80, 0.08, 'square', 0.1);
+    this.noise(0.06, 0.06, 0, 400);
+  },
+  quizAppear() {
+    if (!this.enabled) return;
+    this.tone(660, 0.1, 'sine', 0.1);
+    this.tone(880, 0.15, 'sine', 0.1, 0.06);
+  },
+  correct() {
+    if (!this.enabled) return;
+    this.tone(523, 0.08, 'square', 0.1);          // C5
+    this.tone(659, 0.08, 'square', 0.1, 0.08);    // E5
+    this.tone(784, 0.18, 'square', 0.12, 0.16);   // G5
+  },
+  wrong() {
+    if (!this.enabled) return;
+    this.tone(220, 0.18, 'sawtooth', 0.13);
+    this.tone(208, 0.22, 'sawtooth', 0.11, 0.06);
+  },
+  doorOpen() {
+    if (!this.enabled) return;
+    this.tone(440, 0.06, 'triangle', 0.1);
+    this.tone(554, 0.06, 'triangle', 0.1, 0.05);
+    this.tone(659, 0.06, 'triangle', 0.1, 0.1);
+    this.tone(880, 0.18, 'triangle', 0.13, 0.15);
+    this.noise(0.25, 0.04, 0, 3000);
+  },
+  exitBlocked() {
+    if (!this.enabled) return;
+    this.tone(180, 0.12, 'square', 0.13, 0, 130);
+    this.tone(140, 0.18, 'square', 0.11, 0.08, 100);
+  },
+  exitOpen() {
+    if (!this.enabled) return;
+    for (let i = 0; i < 6; i++) {
+      this.tone(880 + i * 110, 0.08, 'sine', 0.07, i * 0.04);
+    }
+  },
+  gameOver() {
+    if (!this.enabled) return;
+    this.tone(220, 0.25, 'sawtooth', 0.15, 0, 165);
+    this.tone(196, 0.3, 'sawtooth', 0.15, 0.2, 147);
+    this.tone(165, 0.5, 'sawtooth', 0.18, 0.4, 110);
+    this.noise(0.6, 0.08, 0, 600);
+  },
+  victory() {
+    if (!this.enabled) return;
+    this.tone(523, 0.12, 'square', 0.13);          // C5
+    this.tone(659, 0.12, 'square', 0.13, 0.12);    // E5
+    this.tone(784, 0.12, 'square', 0.13, 0.24);    // G5
+    this.tone(1047, 0.4, 'square', 0.16, 0.36);    // C6
+    this.tone(523, 0.4, 'square', 0.10, 0.36);     // C5 (sotto)
+  },
+  levelComplete() {
+    if (!this.enabled) return;
+    this.tone(659, 0.1, 'square', 0.12);
+    this.tone(784, 0.1, 'square', 0.12, 0.1);
+    this.tone(1047, 0.22, 'square', 0.14, 0.2);
+  },
+  uiClick() {
+    if (!this.enabled) return;
+    this.tone(800, 0.04, 'square', 0.08);
+  },
+  toggle() {
+    this.enabled = !this.enabled;
+    return this.enabled;
+  }
+};
+
+// ============================================================
+// COSTANTI E SETUP CANVAS
+// ============================================================
+const TILE = 40;
+const COLS = 17;
+const ROWS = 13;
+const T_FLOOR = 0, T_WALL = 1, T_QUIZ = 2, T_EXIT = 3;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const offscreen = document.createElement('canvas');
+offscreen.width = COLS * TILE;
+offscreen.height = ROWS * TILE;
+const offctx = offscreen.getContext('2d');
+offctx.imageSmoothingEnabled = false;
+
+// ============================================================
+// LIVELLI (15 colonne x 11 righe)
+// # = muro, . = pavimento, Q = porta runica, P = Teseo, M = Minotauro, E = uscita
+// ============================================================
+const LEVELS = [
+  {
+    name: "Le Prigioni",
+    fullName: "Le Prigioni Sotterranee",
+    subtitle: "Mura di pietra antica e prigioni dimenticate",
+    theme: "prison",
+    minotaurSlowness: 2.0,
+    layout: [
+      "#################",
+      "#P......#......M#",
+      "#.######.#####.##",
+      "#......Q........#",
+      "#.######.######.#",
+      "#......#........#",
+      "#.######Q######.#",
+      "#......#........#",
+      "#.######.######.#",
+      "#......#........#",
+      "#.######Q######.#",
+      "#......#........E",
+      "#################"
+    ]
+  },
+  {
+    name: "Le Rovine Verdi",
+    fullName: "Le Rovine Invase dalla Natura",
+    subtitle: "Muschio e liane invadono il labirinto",
+    theme: "ruins",
+    minotaurSlowness: 1.5,
+    layout: [
+      "#################",
+      "#P......#......M#",
+      "#.######.#####.##",
+      "#.......Q.......#",
+      "#.######.######.#",
+      "#......#........#",
+      "#.######Q######.#",
+      "#......#........#",
+      "#.######.######.#",
+      "#......Q........#",
+      "#.######.######.#",
+      "#.......Q.......E",
+      "#################"
+    ]
+  },
+  {
+    name: "Cuore del Vulcano",
+    fullName: "Il Cuore del Vulcano",
+    subtitle: "Ossidiana nera e crepe di lava ardente",
+    theme: "volcano",
+    minotaurSlowness: 1.0,
+    layout: [
+      "#################",
+      "#P......#......M#",
+      "#.######.#####.##",
+      "#.......Q.......#",
+      "#.######.######.#",
+      "#.......Q.......#",
+      "#.######.######.#",
+      "#.......Q.......#",
+      "#.######.######.#",
+      "#.......Q.......#",
+      "#.######.######.#",
+      "#.......Q.......E",
+      "#################"
+    ]
+  }
+];
+
+// ============================================================
+// DATABASE DOMANDE — Grammatica livello 2ª elementare
+// ============================================================
+const QUESTIONS = [
+  // GLI / LI
+  { q: "Quale parola è scritta correttamente?", options: ["Foglia", "Folia", "Folglia"], correct: 0 },
+  { q: "Quale parola è giusta?", options: ["Famiglia", "Familia", "Familglia"], correct: 0 },
+  { q: "Scegli la forma corretta:", options: ["Coniglio", "Conilio", "Conlilio"], correct: 0 },
+  { q: "Quale è scritta bene?", options: ["Maglione", "Malione", "Magnone"], correct: 0 },
+  { q: "Quale parola è corretta?", options: ["Bottiglia", "Botilia", "Bottilglia"], correct: 0 },
+  // GN / NI
+  { q: "Quale è scritta bene?", options: ["Ragno", "Ranio", "Rangno"], correct: 0 },
+  { q: "Quale parola è corretta?", options: ["Gnomo", "Niomo", "Ngomo"], correct: 0 },
+  { q: "Scegli la forma giusta:", options: ["Lavagna", "Lavania", "Lavanga"], correct: 0 },
+  { q: "Quale è scritta bene?", options: ["Castagna", "Castania", "Castangna"], correct: 0 },
+  { q: "Quale parola è corretta?", options: ["Montagna", "Montania", "Montagnia"], correct: 0 },
+  // SCI / SCE
+  { q: "Il ___ nuota nel mare. Quale è giusto?", options: ["pesce", "pessce", "pesscie"], correct: 0 },
+  { q: "Quale è scritta bene?", options: ["Sciare", "Sceare", "Schiare"], correct: 0 },
+  { q: "Quale è corretta?", options: ["Scivolo", "Sivolo", "Scvivolo"], correct: 0 },
+  { q: "Scegli la forma giusta:", options: ["Sciroppo", "Siroppo", "Schiroppo"], correct: 0 },
+  // CHI / CHE
+  { q: "Quale è scritta bene?", options: ["Chiave", "Ciave", "Cchiave"], correct: 0 },
+  { q: "Quale è corretta?", options: ["Pacchetto", "Pachetto", "Paccheto"], correct: 0 },
+  { q: "Scegli la forma giusta:", options: ["Chiesa", "Ciesa", "Chesa"], correct: 0 },
+  { q: "Quale è scritta bene?", options: ["Occhiali", "Ociali", "Oqchiali"], correct: 0 },
+  // CU / QU / CQU
+  { q: "Quale è scritta bene?", options: ["Acqua", "Aqcua", "Aquca"], correct: 0 },
+  { q: "Quale è corretta?", options: ["Quaderno", "Cuaderno", "Qaderno"], correct: 0 },
+  { q: "Scegli la forma giusta:", options: ["Cuore", "Quore", "Qore"], correct: 0 },
+  { q: "Quale è scritta bene?", options: ["Scuola", "Squola", "Skuola"], correct: 0 },
+  { q: "Quale è corretta?", options: ["Acquario", "Aquario", "Acuario"], correct: 0 },
+  { q: "Scegli la forma giusta:", options: ["Cinque", "Cincue", "Cinkue"], correct: 0 },
+  { q: "Quale è scritta bene?", options: ["Quattro", "Cuattro", "Kuattro"], correct: 0 },
+  // Uso dell'H
+  { q: "Completa: 'Io ___ un cane.'", options: ["ho", "o", "hò"], correct: 0 },
+  { q: "Completa: 'Tu ___ fame?'", options: ["hai", "ai", "ahi"], correct: 0 },
+  { q: "Completa: 'Marco ___ paura.'", options: ["ha", "a", "ah"], correct: 0 },
+  { q: "Completa: 'Vado a casa ___ a scuola?'", options: ["o", "ho", "oh"], correct: 0 },
+  { q: "Completa: 'I bambini ___ giocato.'", options: ["hanno", "anno", "ahanno"], correct: 0 },
+  { q: "Completa: 'L'___ scorso sono andato al mare.'", options: ["anno", "hanno", "ahnno"], correct: 0 },
+  // Doppie
+  { q: "Quale è scritta bene?", options: ["Palla", "Pala", "Pallla"], correct: 0 },
+  { q: "Quale è corretta?", options: ["Mamma", "Mama", "Mammma"], correct: 0 },
+  { q: "Scegli la forma giusta:", options: ["Gatto", "Gato", "Gattto"], correct: 0 },
+  { q: "Mi metto in testa il...", options: ["cappello", "capello", "capelo"], correct: 0 },
+  { q: "Quale è scritta bene?", options: ["Pizza", "Piza", "Pizzza"], correct: 0 },
+  { q: "Quale è corretta?", options: ["Nonno", "Nono", "Nonnno"], correct: 0 },
+  // Sillabe
+  { q: "Dividi in sillabe: GATTO", options: ["GAT-TO", "GA-TTO", "G-ATTO"], correct: 0 },
+  { q: "Dividi in sillabe: CASA", options: ["CA-SA", "CAS-A", "C-ASA"], correct: 0 },
+  { q: "Dividi in sillabe: MELA", options: ["ME-LA", "MEL-A", "M-ELA"], correct: 0 },
+  { q: "Dividi in sillabe: SCUOLA", options: ["SCUO-LA", "SCU-OLA", "S-CUOLA"], correct: 0 },
+  { q: "Dividi in sillabe: TAVOLO", options: ["TA-VO-LO", "TAV-O-LO", "TA-VOL-O"], correct: 0 },
+  { q: "Dividi in sillabe: CANE", options: ["CA-NE", "CAN-E", "C-ANE"], correct: 0 },
+  // Articoli determinativi
+  { q: "Quale articolo va bene? ___ libro", options: ["Il", "La", "Lo"], correct: 0 },
+  { q: "Quale articolo va bene? ___ amico", options: ["L'", "Il", "Lo"], correct: 0 },
+  { q: "Quale articolo va bene? ___ zaino", options: ["Lo", "Il", "La"], correct: 0 },
+  { q: "Quale articolo va bene? ___ scuola", options: ["La", "Il", "Lo"], correct: 0 },
+  { q: "Quale articolo va bene? ___ bambini", options: ["I", "Gli", "Le"], correct: 0 },
+  { q: "Quale articolo va bene? ___ alberi", options: ["Gli", "I", "Le"], correct: 0 },
+  // Articoli indeterminativi
+  { q: "Quale articolo va bene? ___ albero", options: ["Un", "Una", "Uno"], correct: 0 },
+  { q: "Quale articolo va bene? ___ ape", options: ["Un'", "Una", "Un"], correct: 0 },
+  { q: "Quale articolo va bene? ___ studente", options: ["Uno", "Un", "Una"], correct: 0 },
+  { q: "Quale articolo va bene? ___ casa", options: ["Una", "Uno", "Un"], correct: 0 },
+  // Nomi comuni / propri
+  { q: "Quale è un nome proprio?", options: ["Marco", "gatto", "città"], correct: 0 },
+  { q: "Quale è un nome comune?", options: ["cane", "Roma", "Maria"], correct: 0 },
+  { q: "Quale è un nome proprio?", options: ["Italia", "fiume", "libro"], correct: 0 },
+  { q: "Quale è un nome comune?", options: ["maestra", "Lucia", "Milano"], correct: 0 },
+  { q: "Quale è un nome proprio?", options: ["Anna", "scuola", "amica"], correct: 0 }
+];
+
+// ============================================================
+// STATO DI GIOCO
+// ============================================================
+const GAME = {
+  state: 'menu',
+  level: 0,
+  grid: [],
+  player: { x: 0, y: 0, dir: 'down' },
+  minotaur: { x: 0, y: 0, subturn: 0 },
+  exit: { x: 0, y: 0 },
+  score: 0,
+  questionsUsed: new Set(),
+  pendingQuiz: null,
+  currentQuestion: null,
+  particles: [],
+  shake: 0,
+  step: 0
+};
+
+// ============================================================
+// PARSING LIVELLI
+// ============================================================
+function loadLevel(idx) {
+  const level = LEVELS[idx];
+  GAME.grid = [];
+  let totalDoors = 0;
+  for (let y = 0; y < level.layout.length; y++) {
+    const row = [];
+    for (let x = 0; x < level.layout[y].length; x++) {
+      const c = level.layout[y][x];
+      if (c === '#') row.push(T_WALL);
+      else if (c === 'Q') { row.push(T_QUIZ); totalDoors++; }
+      else if (c === 'E') { row.push(T_EXIT); GAME.exit = { x, y }; }
+      else if (c === 'P') { row.push(T_FLOOR); GAME.player = { x, y, dir: 'down' }; }
+      else if (c === 'M') { row.push(T_FLOOR); GAME.minotaur = { x, y, subturn: 0 }; }
+      else row.push(T_FLOOR);
+    }
+    GAME.grid.push(row);
+  }
+  GAME.particles = [];
+  GAME.step = 0;
+  GAME.totalDoorsThisLevel = totalDoors;
+  GAME.doorsOpenedThisLevel = 0;
+  document.getElementById('levelLabel').textContent = (idx + 1);
+  document.getElementById('levelName').textContent = level.name;
+  updateDoorsLabel();
+}
+
+function updateDoorsLabel() {
+  document.getElementById('doorsLabel').textContent =
+    `${GAME.doorsOpenedThisLevel}/${GAME.totalDoorsThisLevel}`;
+}
+
+function countRemainingQuizDoors() {
+  let count = 0;
+  for (const row of GAME.grid) {
+    for (const cell of row) {
+      if (cell === T_QUIZ) count++;
+    }
+  }
+  return count;
+}
+
+// ============================================================
+// DISEGNO TILES
+// ============================================================
+function hash2D(x, y) {
+  const h = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+  return (h % 1000) / 1000;
+}
+
+function renderMaze() {
+  const theme = LEVELS[GAME.level].theme;
+  for (let y = 0; y < GAME.grid.length; y++) {
+    for (let x = 0; x < GAME.grid[y].length; x++) {
+      drawTile(offctx, x, y, GAME.grid[y][x], theme);
+    }
+  }
+}
+
+function drawTile(ctx, x, y, type, theme) {
+  drawFloor(ctx, x, y, theme);
+  if (type === T_WALL) drawWall(ctx, x, y, theme);
+  else if (type === T_QUIZ) drawQuizWall(ctx, x, y, theme);
+  else if (type === T_EXIT) drawExit(ctx, x, y, theme);
+}
+
+function drawFloor(ctx, gx, gy, theme) {
+  const x = gx * TILE, y = gy * TILE;
+  let base, accent, line;
+  if (theme === 'prison') {
+    base = '#3a342a'; accent = '#2a241c'; line = '#1a1410';
+  } else if (theme === 'ruins') {
+    base = '#4a3e22'; accent = '#3a3018'; line = '#2a2010';
+  } else {
+    base = '#1a0a08'; accent = '#0a0404'; line = '#3a1a18';
+  }
+  ctx.fillStyle = base;
+  ctx.fillRect(x, y, TILE, TILE);
+
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+
+  const h = hash2D(gx, gy);
+  ctx.fillStyle = accent;
+  if (h < 0.3) ctx.fillRect(x + 4 + Math.floor(h * 20), y + 6, 4, 2);
+  if (h > 0.6) ctx.fillRect(x + 8, y + TILE - 8, 6, 2);
+
+  if (theme === 'volcano') {
+    if (h > 0.4) {
+      ctx.strokeStyle = '#ff3a00';
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = '#ff3a00';
+      ctx.shadowBlur = 5;
+      ctx.beginPath();
+      ctx.moveTo(x + 4, y + 4 + h * 16);
+      ctx.lineTo(x + 14, y + 12 + h * 8);
+      ctx.lineTo(x + 24, y + 22 + h * 4);
+      ctx.lineTo(x + TILE - 4, y + 30);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  if (theme === 'ruins' && h > 0.65) {
+    ctx.fillStyle = 'rgba(80, 130, 50, 0.45)';
+    ctx.beginPath();
+    ctx.arc(x + 8 + h * 18, y + 12 + h * 12, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(50, 100, 30, 0.4)';
+    ctx.beginPath();
+    ctx.arc(x + 24, y + 28, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawWall(ctx, gx, gy, theme) {
+  const x = gx * TILE, y = gy * TILE;
+  let base, light, dark, mortar;
+  if (theme === 'prison') {
+    base = '#5a544c'; light = '#7a7268'; dark = '#3a352f'; mortar = '#1f1a14';
+  } else if (theme === 'ruins') {
+    base = '#5a4a36'; light = '#6e5e44'; dark = '#3a2e1c'; mortar = '#1a1408';
+  } else {
+    base = '#1a1422'; light = '#2e2438'; dark = '#0a0712'; mortar = '#3a1c40';
+  }
+  ctx.fillStyle = base;
+  ctx.fillRect(x, y, TILE, TILE);
+
+  // Pattern mattoni
+  const brickH = 10;
+  const brickW = 20;
+
+  ctx.fillStyle = mortar;
+  ctx.fillRect(x, y + brickH - 1, TILE, 1);
+  ctx.fillRect(x, y + brickH * 2 - 1, TILE, 1);
+  ctx.fillRect(x, y + brickH * 3 - 1, TILE, 1);
+
+  for (let row = 0; row < 4; row++) {
+    const off = (row % 2 === 0) ? 0 : brickW / 2;
+    for (let bx = -off; bx < TILE + brickW; bx += brickW) {
+      const drawX = x + bx;
+      if (drawX > x && drawX < x + TILE) {
+        ctx.fillRect(drawX - 0.5, y + row * brickH, 1, brickH);
+      }
+    }
+  }
+
+  // Highlights mattoni
+  ctx.fillStyle = light;
+  for (let row = 0; row < 4; row++) {
+    const off = (row % 2 === 0) ? 0 : brickW / 2;
+    for (let bx = -off; bx < TILE; bx += brickW) {
+      const dx = x + bx + 1;
+      const dy = y + row * brickH;
+      if (dx + brickW - 2 > x && dx < x + TILE) {
+        const startX = Math.max(dx, x);
+        const endX = Math.min(dx + brickW - 1, x + TILE);
+        if (endX > startX) ctx.fillRect(startX, dy, endX - startX, 1);
+      }
+    }
+  }
+
+  ctx.fillStyle = dark;
+  ctx.fillRect(x, y + TILE - 2, TILE, 2);
+
+  // Overlay tematici
+  if (theme === 'ruins') {
+    const h = hash2D(gx, gy);
+    ctx.fillStyle = 'rgba(60, 110, 40, 0.6)';
+    ctx.fillRect(x + Math.floor(h * 28), y, 3, 12 + h * 12);
+    if (h > 0.5) {
+      ctx.fillStyle = 'rgba(80, 140, 50, 0.55)';
+      ctx.beginPath();
+      ctx.arc(x + 6 + h * 24, y + 16 + h * 14, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(40, 80, 30, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x + 5, y);
+    ctx.bezierCurveTo(x + 12, y + 10, x + 4, y + 22, x + 8, y + 32);
+    ctx.stroke();
+  } else if (theme === 'volcano') {
+    const h = hash2D(gx, gy);
+    ctx.fillStyle = 'rgba(180, 100, 200, 0.22)';
+    ctx.beginPath();
+    ctx.moveTo(x + 4 + h * 14, y + 6);
+    ctx.lineTo(x + 9 + h * 14, y + 6);
+    ctx.lineTo(x + 6.5 + h * 14, y + 16);
+    ctx.fill();
+    if (h > 0.4) {
+      ctx.strokeStyle = '#aa2040';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(x + 2, y + 8 + h * 18);
+      ctx.lineTo(x + 18, y + 18);
+      ctx.lineTo(x + TILE - 6, y + 28);
+      ctx.stroke();
+    }
+  } else if (theme === 'prison') {
+    // Tracce di umidità
+    const h = hash2D(gx, gy);
+    if (h > 0.6) {
+      ctx.fillStyle = 'rgba(40, 50, 60, 0.4)';
+      ctx.beginPath();
+      ctx.arc(x + 8 + h * 16, y + 10 + h * 12, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+function drawQuizWall(ctx, gx, gy, theme) {
+  const x = gx * TILE, y = gy * TILE;
+  drawWall(ctx, gx, gy, theme);
+
+  let glow, runeColor;
+  if (theme === 'prison') { glow = '#f4c430'; runeColor = '#fff5b0'; }
+  else if (theme === 'ruins') { glow = '#a0e060'; runeColor = '#e0ffb0'; }
+  else { glow = '#ff7020'; runeColor = '#ffd070'; }
+
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 400);
+
+  ctx.save();
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 10 + pulse * 8;
+
+  // Rune greca stilizzata (Pi greco / Lambda)
+  ctx.strokeStyle = runeColor;
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  const cx = x + TILE / 2, cy = y + TILE / 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 9, cy - 10);
+  ctx.lineTo(cx + 9, cy - 10);
+  ctx.moveTo(cx - 7, cy - 10);
+  ctx.lineTo(cx - 7, cy + 8);
+  ctx.moveTo(cx + 7, cy - 10);
+  ctx.lineTo(cx + 7, cy + 8);
+  ctx.moveTo(cx - 10, cy + 11);
+  ctx.lineTo(cx + 10, cy + 11);
+  ctx.stroke();
+
+  // Bordo luminoso
+  ctx.strokeStyle = glow;
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.4 + pulse * 0.5;
+  ctx.strokeRect(x + 3, y + 3, TILE - 6, TILE - 6);
+  ctx.restore();
+}
+
+function drawExit(ctx, gx, gy, theme) {
+  const x = gx * TILE, y = gy * TILE;
+  drawFloor(ctx, gx, gy, theme);
+
+  // Sfondo arco
+  ctx.fillStyle = '#0a1a14';
+  ctx.fillRect(x + 2, y + 4, TILE - 4, TILE - 6);
+
+  // Bagliore portale
+  const grad = ctx.createRadialGradient(x + TILE / 2, y + TILE / 2, 2, x + TILE / 2, y + TILE / 2, TILE / 1.4);
+  grad.addColorStop(0, 'rgba(244, 196, 48, 0.95)');
+  grad.addColorStop(0.45, 'rgba(176, 217, 100, 0.55)');
+  grad.addColorStop(1, 'rgba(50, 80, 30, 0.05)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(x + 4, y + 6, TILE - 8, TILE - 10);
+
+  // Colonne
+  ctx.fillStyle = '#d4af7a';
+  ctx.fillRect(x + 2, y + 4, 4, TILE - 6);
+  ctx.fillRect(x + TILE - 6, y + 4, 4, TILE - 6);
+  ctx.fillStyle = '#b08d57';
+  ctx.fillRect(x + 2, y + 4, 4, 3);
+  ctx.fillRect(x + TILE - 6, y + 4, 4, 3);
+  ctx.fillRect(x + 2, y + TILE - 5, 4, 3);
+  ctx.fillRect(x + TILE - 6, y + TILE - 5, 4, 3);
+
+  // Frieze superiore
+  ctx.fillStyle = '#d4af7a';
+  ctx.fillRect(x + 2, y + 2, TILE - 4, 4);
+
+  // Greek key
+  ctx.fillStyle = '#6b5230';
+  for (let i = 0; i < 4; i++) {
+    ctx.fillRect(x + 4 + i * 8, y + 3, 2, 1);
+  }
+
+  // Testo "USCITA"
+  const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 300);
+  ctx.save();
+  ctx.shadowColor = '#f4c430';
+  ctx.shadowBlur = 12 * pulse;
+  ctx.fillStyle = `rgba(255, 240, 180, ${pulse})`;
+  ctx.font = 'bold 9px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('USCITA', x + TILE / 2, y + TILE / 2 + 3);
+  ctx.restore();
+}
+
+// ============================================================
+// DISEGNO PERSONAGGI
+// ============================================================
+function drawTheseus(ctx, cx, cy) {
+  const px = cx * TILE, py = cy * TILE;
+  ctx.save();
+  ctx.translate(px + TILE / 2, py + TILE / 2);
+
+  const bob = Math.sin(GAME.step * 0.5 + Date.now() / 200) * 1.2;
+  ctx.translate(0, bob);
+
+  // Ombra
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(0, TILE / 2 - 4 - bob, 12, 3.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Corpo (armatura di bronzo)
+  ctx.fillStyle = '#b08d57';
+  ctx.fillRect(-7, -1, 14, 12);
+  ctx.fillStyle = '#d4af7a';
+  ctx.fillRect(-7, -1, 14, 2);
+  ctx.fillRect(-6, 1, 1, 8);
+  ctx.fillRect(5, 1, 1, 8);
+  ctx.fillStyle = '#6b5230';
+  ctx.fillRect(-1, 1, 2, 7);
+  ctx.fillRect(-7, 9, 14, 2);
+  // Cintura
+  ctx.fillStyle = '#3a2818';
+  ctx.fillRect(-7, 10, 14, 1);
+
+  // Tunica rossa
+  ctx.fillStyle = '#8b1a1a';
+  ctx.fillRect(-6, 11, 12, 5);
+  ctx.fillStyle = '#6b1010';
+  ctx.fillRect(-3, 11, 1, 5);
+  ctx.fillRect(2, 11, 1, 5);
+  ctx.fillStyle = '#d4af7a';
+  ctx.fillRect(-6, 15, 12, 1);
+
+  // Gambe / sandali
+  ctx.fillStyle = '#e8c8a0';
+  ctx.fillRect(-5, 16, 3, 2);
+  ctx.fillRect(2, 16, 3, 2);
+  ctx.fillStyle = '#6b5230';
+  ctx.fillRect(-5, 18, 3, 1);
+  ctx.fillRect(2, 18, 3, 1);
+
+  // Testa
+  ctx.fillStyle = '#e8c8a0';
+  ctx.fillRect(-4, -9, 8, 8);
+
+  // Elmo greco
+  ctx.fillStyle = '#b08d57';
+  ctx.fillRect(-6, -15, 12, 5);
+  ctx.fillRect(-6, -10, 2, 5);
+  ctx.fillRect(4, -10, 2, 5);
+  ctx.fillStyle = '#d4af7a';
+  ctx.fillRect(-6, -15, 12, 1);
+  ctx.fillRect(-6, -14, 1, 4);
+  ctx.fillStyle = '#6b5230';
+  ctx.fillRect(-6, -11, 12, 1);
+
+  // Base del pennacchio
+  ctx.fillStyle = '#6b5230';
+  ctx.fillRect(-3, -17, 6, 2);
+  ctx.fillStyle = '#d4af7a';
+  ctx.fillRect(-3, -17, 6, 1);
+
+  // Pennacchio rosso animato
+  const plumeWave = Math.sin(Date.now() / 200) * 0.6;
+  ctx.fillStyle = '#a01818';
+  ctx.fillRect(-3, -22, 2, 6);
+  ctx.fillRect(-1 + plumeWave, -23, 2, 7);
+  ctx.fillRect(1 + plumeWave * 0.5, -22, 2, 6);
+  ctx.fillStyle = '#d63b3b';
+  ctx.fillRect(-3, -22, 1, 5);
+  ctx.fillRect(-1 + plumeWave, -23, 1, 6);
+  ctx.fillRect(1 + plumeWave * 0.5, -22, 1, 5);
+  ctx.fillStyle = '#ff9090';
+  ctx.fillRect(-3, -22, 1, 1);
+  ctx.fillRect(0 + plumeWave, -23, 1, 1);
+  ctx.fillRect(2 + plumeWave * 0.5, -22, 1, 1);
+
+  // Occhi
+  ctx.fillStyle = '#1a0e08';
+  ctx.fillRect(-3, -6, 1, 2);
+  ctx.fillRect(2, -6, 1, 2);
+  // Bocca
+  ctx.fillStyle = '#5a3818';
+  ctx.fillRect(-1, -2, 2, 1);
+  // Tracce di barba
+  ctx.fillRect(-3, -2, 1, 1);
+  ctx.fillRect(2, -2, 1, 1);
+
+  // Scudo rotondo a sinistra
+  ctx.fillStyle = '#6b5230';
+  ctx.beginPath();
+  ctx.arc(-11, 4, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#b08d57';
+  ctx.beginPath();
+  ctx.arc(-11, 4, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#d4af7a';
+  ctx.beginPath();
+  ctx.arc(-11.5, 3.5, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#6b5230';
+  ctx.beginPath();
+  ctx.arc(-11, 4, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  // Borchie
+  ctx.fillStyle = '#3a2818';
+  ctx.beginPath();
+  ctx.arc(-11, 0, 0.7, 0, Math.PI * 2);
+  ctx.arc(-7, 4, 0.7, 0, Math.PI * 2);
+  ctx.arc(-15, 4, 0.7, 0, Math.PI * 2);
+  ctx.arc(-11, 8, 0.7, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Spada a destra
+  ctx.fillStyle = '#d8d8e0';
+  ctx.fillRect(11, -10, 2, 14);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(11, -10, 1, 14);
+  ctx.fillStyle = '#d8d8e0';
+  ctx.beginPath();
+  ctx.moveTo(11, -10);
+  ctx.lineTo(13, -10);
+  ctx.lineTo(12, -13);
+  ctx.fill();
+  ctx.fillStyle = '#f4c430';
+  ctx.fillRect(9, 4, 6, 2);
+  ctx.fillStyle = '#6b1010';
+  ctx.fillRect(11, 6, 2, 4);
+  ctx.fillStyle = '#f4c430';
+  ctx.fillRect(10, 10, 4, 2);
+
+  ctx.restore();
+}
+
+function drawMinotaur(ctx, cx, cy) {
+  const px = cx * TILE, py = cy * TILE;
+  ctx.save();
+  ctx.translate(px + TILE / 2, py + TILE / 2);
+
+  // Lieve oscillazione minacciosa
+  const sway = Math.sin(Date.now() / 300) * 0.5;
+  ctx.translate(sway, 0);
+
+  // Ombra
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.beginPath();
+  ctx.ellipse(0, TILE / 2 - 3, 14, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Corpo (peloso, marrone scuro)
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-9, -2, 18, 14);
+  ctx.fillStyle = '#5a3a1c';
+  ctx.fillRect(-9, -2, 18, 2);
+  ctx.fillRect(-9, -2, 2, 14);
+  // Ciuffi di pelliccia
+  ctx.fillStyle = '#1a0e08';
+  ctx.fillRect(-7, 2, 1, 3);
+  ctx.fillRect(-3, 5, 1, 3);
+  ctx.fillRect(2, 4, 1, 3);
+  ctx.fillRect(6, 2, 1, 3);
+  ctx.fillRect(-5, 8, 1, 2);
+  ctx.fillRect(4, 8, 1, 2);
+  // Pancia
+  ctx.fillStyle = '#5a3a1c';
+  ctx.fillRect(-3, 10, 6, 2);
+
+  // Zampe con zoccoli
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-7, 12, 5, 5);
+  ctx.fillRect(2, 12, 5, 5);
+  ctx.fillStyle = '#1a0e08';
+  ctx.fillRect(-7, 16, 5, 1);
+  ctx.fillRect(2, 16, 5, 1);
+  ctx.fillStyle = '#1a1010';
+  ctx.fillRect(-7, 17, 5, 2);
+  ctx.fillRect(2, 17, 5, 2);
+
+  // Braccia massicce
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-12, 0, 3, 11);
+  ctx.fillRect(9, 0, 3, 11);
+  ctx.fillStyle = '#5a3a1c';
+  ctx.fillRect(-12, 0, 1, 11);
+  ctx.fillRect(9, 0, 1, 11);
+  // Pugni
+  ctx.fillStyle = '#2a1808';
+  ctx.fillRect(-13, 10, 5, 4);
+  ctx.fillRect(8, 10, 5, 4);
+  ctx.fillStyle = '#1a0e08';
+  ctx.fillRect(-13, 12, 5, 1);
+  ctx.fillRect(8, 12, 5, 1);
+
+  // Testa di toro
+  ctx.fillStyle = '#4a2e16';
+  ctx.fillRect(-7, -13, 14, 11);
+  ctx.fillStyle = '#6a4222';
+  ctx.fillRect(-7, -13, 14, 2);
+
+  // Muso
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-5, -7, 10, 6);
+  ctx.fillStyle = '#1a0e08';
+  ctx.fillRect(-5, -3, 10, 1);
+  // Narici
+  ctx.fillStyle = '#1a0a04';
+  ctx.fillRect(-3, -5, 2, 2);
+  ctx.fillRect(1, -5, 2, 2);
+  // Vapore dalle narici
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillRect(-3, -7, 1, 1);
+  ctx.fillRect(2, -7, 1, 1);
+
+  // Anello d'oro al naso
+  ctx.strokeStyle = '#f4c430';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.arc(0, -1, 2.5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = '#fff5a0';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.arc(0, -1, 2.5, Math.PI * 0.7, Math.PI * 1.0);
+  ctx.stroke();
+
+  // Corna grigie taurine
+  ctx.fillStyle = '#a0a0a0';
+  ctx.beginPath();
+  ctx.moveTo(-7, -13);
+  ctx.lineTo(-13, -19);
+  ctx.lineTo(-10, -10);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(7, -13);
+  ctx.lineTo(13, -19);
+  ctx.lineTo(10, -10);
+  ctx.fill();
+  // Highlights
+  ctx.fillStyle = '#d8d8d8';
+  ctx.beginPath();
+  ctx.moveTo(-9, -14);
+  ctx.lineTo(-12, -17);
+  ctx.lineTo(-10, -13);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(9, -14);
+  ctx.lineTo(12, -17);
+  ctx.lineTo(10, -13);
+  ctx.fill();
+  // Ombre
+  ctx.fillStyle = '#606060';
+  ctx.beginPath();
+  ctx.moveTo(-7, -13);
+  ctx.lineTo(-10, -10);
+  ctx.lineTo(-8, -10);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(7, -13);
+  ctx.lineTo(10, -10);
+  ctx.lineTo(8, -10);
+  ctx.fill();
+
+  // Occhi rossi luminosi
+  const eyeGlow = 0.7 + 0.3 * Math.sin(Date.now() / 200);
+  ctx.save();
+  ctx.shadowColor = '#ff0000';
+  ctx.shadowBlur = 10 * eyeGlow;
+  ctx.fillStyle = '#ff2020';
+  ctx.fillRect(-4, -10, 3, 2);
+  ctx.fillRect(1, -10, 3, 2);
+  ctx.restore();
+  ctx.fillStyle = `rgba(255, 220, 220, ${eyeGlow})`;
+  ctx.fillRect(-4, -10, 1, 1);
+  ctx.fillRect(1, -10, 1, 1);
+  // Sopracciglia
+  ctx.fillStyle = '#1a0e08';
+  ctx.fillRect(-5, -12, 4, 1);
+  ctx.fillRect(1, -12, 4, 1);
+
+  // Bocca con zanne
+  ctx.fillStyle = '#1a0a04';
+  ctx.fillRect(-3, -2, 6, 1);
+  ctx.fillStyle = '#e8e0c8';
+  ctx.fillRect(-2, -1, 1, 2);
+  ctx.fillRect(1, -1, 1, 2);
+
+  ctx.restore();
+}
+
+// ============================================================
+// LOOP DI DISEGNO
+// ============================================================
+function render() {
+  ctx.save();
+
+  if (GAME.shake > 0) {
+    const sx = (Math.random() - 0.5) * GAME.shake;
+    const sy = (Math.random() - 0.5) * GAME.shake;
+    ctx.translate(sx, sy);
+    GAME.shake *= 0.85;
+    if (GAME.shake < 0.5) GAME.shake = 0;
+  }
+
+  renderMaze();
+  ctx.drawImage(offscreen, 0, 0);
+
+  // Particelle
+  GAME.particles = GAME.particles.filter(p => p.life > 0);
+  for (const p of GAME.particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.min(1, p.life / 30);
+    ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.2;
+    p.life--;
+  }
+  ctx.globalAlpha = 1;
+
+  if (GAME.state === 'playing' || GAME.state === 'quiz') {
+    drawMinotaur(ctx, GAME.minotaur.x, GAME.minotaur.y);
+    drawTheseus(ctx, GAME.player.x, GAME.player.y);
+  }
+
+  ctx.restore();
+}
+
+function gameLoop() {
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// MOVIMENTO
+// ============================================================
+function tryMove(dx, dy) {
+  if (GAME.state !== 'playing') return;
+  const nx = GAME.player.x + dx;
+  const ny = GAME.player.y + dy;
+
+  if (dx > 0) GAME.player.dir = 'right';
+  else if (dx < 0) GAME.player.dir = 'left';
+  else if (dy > 0) GAME.player.dir = 'down';
+  else if (dy < 0) GAME.player.dir = 'up';
+
+  if (ny < 0 || ny >= GAME.grid.length || nx < 0 || nx >= GAME.grid[0].length) return;
+  const tile = GAME.grid[ny][nx];
+
+  if (tile === T_WALL) {
+    GAME.shake = 4;
+    AUDIO.wallBump();
+    return;
+  }
+
+  if (tile === T_QUIZ) {
+    GAME.state = 'quiz';
+    GAME.pendingQuiz = { qx: nx, qy: ny };
+    AUDIO.quizAppear();
+    showQuiz();
+    return;
+  }
+
+  if (tile === T_EXIT) {
+    // Vincolo: tutte le porte runiche devono essere aperte
+    if (countRemainingQuizDoors() > 0) {
+      GAME.shake = 5;
+      AUDIO.exitBlocked();
+      showFeedback('Apri tutte le porte!', false);
+      return;
+    }
+    GAME.player.x = nx;
+    GAME.player.y = ny;
+    GAME.step++;
+    AUDIO.levelComplete();
+    nextLevel();
+    return;
+  }
+
+  GAME.player.x = nx;
+  GAME.player.y = ny;
+  GAME.step++;
+  AUDIO.footstep();
+
+  moveMinotaur();
+
+  if (GAME.player.x === GAME.minotaur.x && GAME.player.y === GAME.minotaur.y) {
+    gameOver();
+  }
+}
+
+function moveMinotaur(extraSteps = 0) {
+  const slowness = LEVELS[GAME.level].minotaurSlowness || 1.0;
+  // Increment subturn counter
+  GAME.minotaur.subturn += 1 + extraSteps;
+  // M moves once per `slowness` player turns
+  while (GAME.minotaur.subturn >= slowness) {
+    GAME.minotaur.subturn -= slowness;
+    const next = bfsNextStep(GAME.minotaur.x, GAME.minotaur.y, GAME.player.x, GAME.player.y);
+    if (next) {
+      GAME.minotaur.x = next.x;
+      GAME.minotaur.y = next.y;
+    }
+    if (GAME.minotaur.x === GAME.player.x && GAME.minotaur.y === GAME.player.y) {
+      gameOver();
+      return;
+    }
+  }
+}
+
+// BFS per pathfinding del Minotauro (passa solo su pavimento)
+function bfsNextStep(sx, sy, tx, ty) {
+  const grid = GAME.grid;
+  const rows = grid.length, cols = grid[0].length;
+  const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+  const parent = Array.from({ length: rows }, () => Array(cols).fill(null));
+  const queue = [[sx, sy]];
+  visited[sy][sx] = true;
+  let found = false;
+
+  while (queue.length > 0) {
+    const [x, y] = queue.shift();
+    if (x === tx && y === ty) { found = true; break; }
+    const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+      if (visited[ny][nx]) continue;
+      const t = grid[ny][nx];
+      if (t !== T_FLOOR) continue;
+      visited[ny][nx] = true;
+      parent[ny][nx] = [x, y];
+      queue.push([nx, ny]);
+    }
+  }
+  if (!found) return null;
+
+  let cur = [tx, ty];
+  let prev = parent[ty][tx];
+  while (prev && (prev[0] !== sx || prev[1] !== sy)) {
+    cur = prev;
+    prev = parent[cur[1]][cur[0]];
+  }
+  return { x: cur[0], y: cur[1] };
+}
+
+// ============================================================
+// QUIZ
+// ============================================================
+function showQuiz() {
+  let availableIndices = [];
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    if (!GAME.questionsUsed.has(i)) availableIndices.push(i);
+  }
+  if (availableIndices.length === 0) {
+    GAME.questionsUsed.clear();
+    availableIndices = QUESTIONS.map((_, i) => i);
+  }
+  const qIdx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+  GAME.questionsUsed.add(qIdx);
+  const q = QUESTIONS[qIdx];
+  GAME.currentQuestion = q;
+
+  document.getElementById('questionText').textContent = q.q;
+  const opts = document.getElementById('optionsContainer');
+  opts.innerHTML = '';
+
+  const indexed = q.options.map((opt, i) => ({ opt, isCorrect: i === q.correct }));
+  for (let i = indexed.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+  }
+
+  indexed.forEach((entry) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = entry.opt;
+    btn.onclick = () => answerQuiz(entry.isCorrect, btn);
+    opts.appendChild(btn);
+  });
+
+  document.getElementById('quizModal').classList.remove('hidden');
+}
+
+function answerQuiz(isCorrect, btn) {
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    AUDIO.correct();
+    setTimeout(() => {
+      const { qx, qy } = GAME.pendingQuiz;
+      GAME.grid[qy][qx] = T_FLOOR;
+      spawnDestroyParticles(qx, qy);
+      GAME.shake = 6;
+      AUDIO.doorOpen();
+
+      GAME.player.x = qx;
+      GAME.player.y = qy;
+      GAME.step++;
+      GAME.score++;
+      GAME.doorsOpenedThisLevel++;
+      document.getElementById('scoreLabel').textContent = GAME.score;
+      updateDoorsLabel();
+
+      // Se è l'ultima porta del livello, suono speciale "uscita aperta"
+      if (countRemainingQuizDoors() === 0) {
+        setTimeout(() => AUDIO.exitOpen(), 250);
+      }
+
+      moveMinotaur();
+
+      document.getElementById('quizModal').classList.add('hidden');
+      GAME.state = 'playing';
+      showFeedback('Esatto!', true);
+
+      if (GAME.player.x === GAME.minotaur.x && GAME.player.y === GAME.minotaur.y) {
+        gameOver();
+      }
+    }, 700);
+  } else {
+    btn.classList.add('wrong');
+    AUDIO.wrong();
+    allBtns.forEach(b => {
+      if (b.textContent === GAME.currentQuestion.options[GAME.currentQuestion.correct]) {
+        setTimeout(() => b.classList.add('correct'), 350);
+      }
+    });
+    setTimeout(() => {
+      moveMinotaur(2);
+      document.getElementById('quizModal').classList.add('hidden');
+      GAME.state = 'playing';
+      GAME.shake = 8;
+      showFeedback('Sbagliato!', false);
+
+      if (GAME.player.x === GAME.minotaur.x && GAME.player.y === GAME.minotaur.y) {
+        gameOver();
+      }
+    }, 1400);
+  }
+}
+
+function spawnDestroyParticles(gx, gy) {
+  const cx = gx * TILE + TILE / 2;
+  const cy = gy * TILE + TILE / 2;
+  const colors = ['#f4c430', '#d4af7a', '#b08d57', '#fff5b0'];
+  for (let i = 0; i < 28; i++) {
+    GAME.particles.push({
+      x: cx + (Math.random() - 0.5) * 12,
+      y: cy + (Math.random() - 0.5) * 12,
+      vx: (Math.random() - 0.5) * 7,
+      vy: (Math.random() - 0.5) * 6 - 2,
+      s: Math.random() * 4 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 30 + Math.random() * 20
+    });
+  }
+}
+
+function showFeedback(text, ok) {
+  const el = document.createElement('div');
+  el.className = ok ? 'feedback-correct' : 'feedback-wrong';
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+// ============================================================
+// FLOW
+// ============================================================
+function nextLevel() {
+  GAME.level++;
+  if (GAME.level >= LEVELS.length) {
+    victory();
+  } else {
+    loadLevel(GAME.level);
+    showLevelBanner();
+  }
+}
+
+function showLevelBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'level-banner';
+  const level = LEVELS[GAME.level];
+  banner.innerHTML = `<h2>Livello ${GAME.level + 1}</h2><h2>${level.fullName}</h2><p>${level.subtitle}</p>`;
+  document.querySelector('.canvas-container').appendChild(banner);
+  setTimeout(() => banner.remove(), 2600);
+}
+
+function gameOver() {
+  GAME.state = 'gameover';
+  GAME.shake = 16;
+  AUDIO.gameOver();
+  setTimeout(() => {
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+  }, 700);
+}
+
+function victory() {
+  GAME.state = 'victory';
+  AUDIO.victory();
+  document.getElementById('finalScore').textContent = GAME.score;
+  setTimeout(() => {
+    document.getElementById('victoryScreen').classList.remove('hidden');
+  }, 400);
+}
+
+function startGame() {
+  AUDIO.init();
+  AUDIO.resume();
+  GAME.level = 0;
+  GAME.score = 0;
+  GAME.questionsUsed.clear();
+  document.getElementById('scoreLabel').textContent = 0;
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('victoryScreen').classList.add('hidden');
+  loadLevel(0);
+  showLevelBanner();
+  GAME.state = 'playing';
+}
+
+// Riparti dal livello corrente, mantenendo il punteggio
+function retryLevel() {
+  AUDIO.resume();
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  GAME.questionsUsed.clear();  // resetta domande così non si ripetono identiche
+  loadLevel(GAME.level);  // ricarica livello attuale, NON livello 0
+  showLevelBanner();
+  GAME.state = 'playing';
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+const keysPressed = new Set();
+
+window.addEventListener('keydown', (e) => {
+  if (GAME.state !== 'playing') return;
+  if (keysPressed.has(e.code)) return;
+  keysPressed.add(e.code);
+
+  switch (e.code) {
+    case 'ArrowUp': case 'KeyW': tryMove(0, -1); e.preventDefault(); break;
+    case 'ArrowDown': case 'KeyS': tryMove(0, 1); e.preventDefault(); break;
+    case 'ArrowLeft': case 'KeyA': tryMove(-1, 0); e.preventDefault(); break;
+    case 'ArrowRight': case 'KeyD': tryMove(1, 0); e.preventDefault(); break;
+  }
+});
+
+window.addEventListener('keyup', (e) => { keysPressed.delete(e.code); });
+
+document.querySelectorAll('.dpad-btn').forEach(btn => {
+  const dir = btn.dataset.dir;
+  let lastTouchTime = 0;
+  const onPress = (e) => {
+    e.preventDefault();
+    // debounce per touch+click
+    const now = Date.now();
+    if (now - lastTouchTime < 50) return;
+    lastTouchTime = now;
+    if (dir === 'up') tryMove(0, -1);
+    else if (dir === 'down') tryMove(0, 1);
+    else if (dir === 'left') tryMove(-1, 0);
+    else if (dir === 'right') tryMove(1, 0);
+  };
+  btn.addEventListener('click', onPress);
+  btn.addEventListener('touchstart', onPress, { passive: false });
+});
+
+// Bottoni
+document.getElementById('startBtn').addEventListener('click', () => { AUDIO.uiClick(); startGame(); });
+document.getElementById('retryBtn').addEventListener('click', () => { AUDIO.uiClick(); retryLevel(); });
+document.getElementById('playAgainBtn').addEventListener('click', () => { AUDIO.uiClick(); startGame(); });
+
+// Toggle audio
+const audioToggleBtn = document.getElementById('audioToggle');
+audioToggleBtn.addEventListener('click', () => {
+  AUDIO.init();
+  AUDIO.resume();
+  const enabled = AUDIO.toggle();
+  audioToggleBtn.textContent = enabled ? '🔊' : '🔇';
+  audioToggleBtn.classList.toggle('muted', !enabled);
+  if (enabled) AUDIO.uiClick();
+});
+
+// Avvio loop di rendering
+gameLoop();
+</script>
+</body>
+</html>
